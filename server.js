@@ -13,8 +13,8 @@ dotenv.config();
 
 const pusher = new Pusher({
     appId: "1332472",
-    key: "7ae261aa9a96b20010db",
-    secret: "a013b885f96c6935aec2",
+    key: process.env.pusher_key,
+    secret: process.env.pusher_secret,
     cluster: "eu",
     useTLS: true
   });
@@ -43,14 +43,22 @@ const db = mongoose.connection
 
  db.once("open", () => {
     console.log("connected to mongo and we are set!!")
+
+    const msgCollection = db.collection("messagecontents")
+    const changeStream = msgCollection.watch()
+
+    changeStream.on("change", (change) => {
+        console.log(change)
+
+        if(change.operationType === "insert") {
+
+        }
+
+    })
 })
 
-const msgCollection = db.collection("messagecontent");
-const changeStream = msgCollection.watch();
 
-changeStream.on("change", (change)=> {
-    console.log(change)
-})
+
 
 
 // api endpoint
