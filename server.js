@@ -4,8 +4,20 @@ import express from "express"
 import mongoose from "mongoose"
 import dotenv from "dotenv"
 import Messages from "./dbMessages.js";
+import Pusher from "pusher";
 
 dotenv.config();
+
+// realtime configuration
+
+
+const pusher = new Pusher({
+    appId: "1332472",
+    key: "7ae261aa9a96b20010db",
+    secret: "a013b885f96c6935aec2",
+    cluster: "eu",
+    useTLS: true
+  });
 
 
 
@@ -24,17 +36,47 @@ const mongo_url = process.env.MONGO_URL
 mongoose.connect(mongo_url, {
     useNewUrlParser: true,
     useUnifiedTopology :true
-}, () => {
-console.log("connected to mongo and we are set!!"
-)})
+})
+
+// db connection
+const db = mongoose.connection
+
+ db.once("open", () => {
+    console.log("connected to mongo and we are set!!")
+})
+
+const msgCollection = db.collection("messagecontent");
+const changeStream = msgCollection.watch();
+
+changeStream.on("change", (change)=> {
+    console.log(change)
+})
 
 
 // api endpoint
 
-app.get("/", (req,res)=> res.status(200).send("hello don"))
+app.get("/", (req,res)=> res.status(200).send("hello don")) 
 
+// getting all data from db
+
+app.get("/messages/sync", (req, res) => {
+    Messages.find((err, data)=> {
+
+        if(err) {
+            res.status(err).send (err)
+        }
+
+        else {
+            res.status(200).send(data)
+        }
+
+    })
+})
+
+
+// posting a data to db
 app.post("/messages/new", (req,res) => {
-    dbMessage = req.body
+   const dbMessage = req.body
 
     Messages.create(dbMessage, (err, data) => {
         if(err) {
@@ -50,4 +92,4 @@ app.post("/messages/new", (req,res) => {
 
 // listen
 
-app.listen(port , console.log(`hey am connected to port: ${port}` ))
+app.listen(port , console.log(`hey am connected to port: ${port}` )) 
